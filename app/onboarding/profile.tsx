@@ -121,6 +121,7 @@ export default function ProfileSetupScreen() {
             <TextInput
               style={styles.input}
               placeholder="山田 太郎"
+              placeholderTextColor="#cbd5e1"
               value={name}
               onChangeText={setName}
             />
@@ -131,6 +132,7 @@ export default function ProfileSetupScreen() {
             <TextInput
               style={styles.input}
               placeholder="フロントエンドエンジニア"
+              placeholderTextColor="#cbd5e1"
               value={role}
               onChangeText={setRole}
             />

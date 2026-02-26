@@ -8,7 +8,12 @@
       "Bash(tasklist:*)",
       "Bash(taskkill:*)",
       "Bash(/c/Users/shoko/project/protoduct/.gitignore:*)",
-      "Bash(npx eas:*)"
+      "Bash(npx eas:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npm i:*)",
+      "Bash(vercel:*)",
+      "Bash(git add:*)"
     ]
   }
 }

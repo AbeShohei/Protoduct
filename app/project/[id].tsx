@@ -190,6 +190,7 @@ export default function ProjectDetailScreen() {
                 value={editName}
                 onChangeText={setEditName}
                 placeholder="プロジェクト名"
+                placeholderTextColor="#cbd5e1"
               />
               <Text style={styles.editLabel}>説明</Text>
               <TextInput
@@ -197,6 +198,7 @@ export default function ProjectDetailScreen() {
                 value={editDesc}
                 onChangeText={setEditDesc}
                 placeholder="説明（任意）"
+                placeholderTextColor="#cbd5e1"
                 multiline
                 numberOfLines={4}
               />
@@ -208,6 +210,7 @@ export default function ProjectDetailScreen() {
                   value={editGithubUrl}
                   onChangeText={setEditGithubUrl}
                   placeholder="https://github.com/owner/repo"
+                  placeholderTextColor="#cbd5e1"
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="url"

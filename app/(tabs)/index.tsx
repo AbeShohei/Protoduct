@@ -65,6 +65,7 @@ function ActiveSessionCard({
             value={tokensIn}
             onChangeText={setTokensIn}
             placeholder="0"
+            placeholderTextColor="#cbd5e1"
             keyboardType="numeric"
           />
         </View>
@@ -75,6 +76,7 @@ function ActiveSessionCard({
             value={tokensOut}
             onChangeText={setTokensOut}
             placeholder="0"
+            placeholderTextColor="#cbd5e1"
             keyboardType="numeric"
           />
         </View>

@@ -133,6 +133,7 @@ export default function CompanySetupScreen() {
             <TextInput
               style={styles.input}
               placeholder="会社名またはチーム名"
+              placeholderTextColor="#cbd5e1"
               value={companyName}
               onChangeText={setCompanyName}
             />
@@ -158,6 +159,7 @@ export default function CompanySetupScreen() {
                 inviteCode.trim().length === 6 && companyByCode === null && styles.codeInputInvalid,
               ]}
               placeholder="A1B2C3"
+              placeholderTextColor="#cbd5e1"
               value={inviteCode}
               onChangeText={(text) => {
                 setInviteCode(text.toUpperCase());

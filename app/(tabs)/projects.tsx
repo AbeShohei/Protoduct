@@ -96,14 +96,14 @@ export default function ProjectsScreen() {
         <TextInput
           style={styles.input}
           placeholder="プロジェクト名 (必須)"
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor="#cbd5e1"
           value={newProjectName}
           onChangeText={setNewProjectName}
         />
         <TextInput
           style={[styles.input, styles.textArea]}
           placeholder="説明 (任意)"
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor="#cbd5e1"
           value={newProjectDesc}
           onChangeText={setNewProjectDesc}
           multiline
@@ -113,7 +113,7 @@ export default function ProjectsScreen() {
           <TextInput
             style={styles.githubInput}
             placeholder="GitHubリポジトリURL (任意)"
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor="#cbd5e1"
             value={newGithubUrl}
             onChangeText={setNewGithubUrl}
             autoCapitalize="none"
