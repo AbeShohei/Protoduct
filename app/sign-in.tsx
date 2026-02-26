@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, LogIn, Shield } from 'lucide-react-native';
 
 export default function SignInScreen() {
   const { isLoaded, signIn, setActive } = useSignIn();
@@ -22,6 +22,8 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [pending2FA, setPending2FA] = useState(false);
+  const [code, setCode] = useState('');
 
   const onSignInPress = async () => {
     if (!isLoaded) return;
@@ -36,6 +38,9 @@ export default function SignInScreen() {
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
         router.replace('/(tabs)');
+      } else if (signInAttempt.status === 'needs_second_factor') {
+        // 2FA needed - show code input
+        setPending2FA(true);
       } else {
         console.error(JSON.stringify(signInAttempt, null, 2));
         Alert.alert('エラー', '追加の認証が必要です');
@@ -44,6 +49,32 @@ export default function SignInScreen() {
       console.error(JSON.stringify(err, null, 2));
       const msg = err.errors?.[0]?.message || 'ログインに失敗しました';
       Alert.alert('ログインエラー', msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onVerify2FA = async () => {
+    if (!isLoaded || !code) return;
+
+    setIsLoading(true);
+    try {
+      const signInAttempt = await signIn.attemptSecondFactor({
+        strategy: 'email_code',
+        code,
+      });
+
+      if (signInAttempt.status === 'complete') {
+        await setActive({ session: signInAttempt.createdSessionId });
+        router.replace('/(tabs)');
+      } else {
+        console.error(JSON.stringify(signInAttempt, null, 2));
+        Alert.alert('エラー', '認証に失敗しました');
+      }
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+      const msg = err.errors?.[0]?.message || '認証コードが正しくありません';
+      Alert.alert('認証エラー', msg);
     } finally {
       setIsLoading(false);
     }
@@ -59,91 +90,139 @@ export default function SignInScreen() {
         <View style={styles.header}>
           <View style={styles.logoContainer}>
             <View style={styles.logo}>
-              <LogIn size={32} color="#fff" />
+              {pending2FA ? <Shield size={32} color="#fff" /> : <LogIn size={32} color="#fff" />}
             </View>
           </View>
           <Text style={styles.appName}>Protoduct</Text>
-          <Text style={styles.tagline}>おかえりなさい</Text>
+          <Text style={styles.tagline}>
+            {pending2FA ? '2段階認証' : 'おかえりなさい'}
+          </Text>
         </View>
 
-        {/* SIGN IN FORM */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.title}>ログイン</Text>
-            <Text style={styles.subtitle}>アカウントにアクセスしましょう</Text>
+        {!pending2FA ? (
+          /* SIGN IN FORM */
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.title}>ログイン</Text>
+              <Text style={styles.subtitle}>アカウントにアクセスしましょう</Text>
+            </View>
+
+            <View style={styles.form}>
+              {/* EMAIL INPUT */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>メールアドレス</Text>
+                <View style={styles.inputWrapper}>
+                  <Mail size={20} color="#94a3b8" style={styles.inputIcon} />
+                  <TextInput
+                    autoCapitalize="none"
+                    value={emailAddress}
+                    placeholder="name@example.com"
+                    placeholderTextColor="#cbd5e1"
+                    onChangeText={(email) => setEmailAddress(email)}
+                    style={styles.input}
+                    keyboardType="email-address"
+                    autoComplete="email"
+                  />
+                </View>
+              </View>
+
+              {/* PASSWORD INPUT */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>パスワード</Text>
+                <View style={styles.inputWrapper}>
+                  <Lock size={20} color="#94a3b8" style={styles.inputIcon} />
+                  <TextInput
+                    value={password}
+                    placeholder="パスワードを入力"
+                    placeholderTextColor="#cbd5e1"
+                    secureTextEntry={!showPassword}
+                    onChangeText={(password) => setPassword(password)}
+                    style={styles.input}
+                    autoComplete="password"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeButton}
+                  >
+                    {showPassword ? (
+                      <EyeOff size={20} color="#94a3b8" />
+                    ) : (
+                      <Eye size={20} color="#94a3b8" />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* SIGN IN BUTTON */}
+              <TouchableOpacity
+                style={[styles.button, (!emailAddress || !password || isLoading) && styles.buttonDisabled]}
+                onPress={onSignInPress}
+                disabled={!emailAddress || !password || isLoading}
+              >
+                <Text style={styles.buttonText}>
+                  {isLoading ? 'ログイン中...' : 'ログイン'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* FOOTER */}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>アカウントをお持ちでないですか？</Text>
+              <TouchableOpacity onPress={() => router.replace('/sign-up')}>
+                <Text style={styles.linkText}>新規登録</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-
-          <View style={styles.form}>
-            {/* EMAIL INPUT */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>メールアドレス</Text>
-              <View style={styles.inputWrapper}>
-                <Mail size={20} color="#94a3b8" style={styles.inputIcon} />
-                <TextInput
-                  autoCapitalize="none"
-                  value={emailAddress}
-                  placeholder="name@example.com"
-                  placeholderTextColor="#cbd5e1"
-                  onChangeText={(email) => setEmailAddress(email)}
-                  style={styles.input}
-                  keyboardType="email-address"
-                  autoComplete="email"
-                />
-              </View>
-            </View>
-
-            {/* PASSWORD INPUT */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>パスワード</Text>
-              <View style={styles.inputWrapper}>
-                <Lock size={20} color="#94a3b8" style={styles.inputIcon} />
-                <TextInput
-                  value={password}
-                  placeholder="パスワードを入力"
-                  placeholderTextColor="#cbd5e1"
-                  secureTextEntry={!showPassword}
-                  onChangeText={(password) => setPassword(password)}
-                  style={styles.input}
-                  autoComplete="password"
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeButton}
-                >
-                  {showPassword ? (
-                    <EyeOff size={20} color="#94a3b8" />
-                  ) : (
-                    <Eye size={20} color="#94a3b8" />
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* FORGOT PASSWORD */}
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>パスワードをお忘れですか？</Text>
-            </TouchableOpacity>
-
-            {/* SIGN IN BUTTON */}
-            <TouchableOpacity
-              style={[styles.button, (!emailAddress || !password || isLoading) && styles.buttonDisabled]}
-              onPress={onSignInPress}
-              disabled={!emailAddress || !password || isLoading}
-            >
-              <Text style={styles.buttonText}>
-                {isLoading ? 'ログイン中...' : 'ログイン'}
+        ) : (
+          /* 2FA FORM */
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.title}>認証コードを入力</Text>
+              <Text style={styles.subtitle}>
+                <Text style={styles.emailHighlight}>{emailAddress}</Text> に送信された6桁のコードを入力してください
               </Text>
-            </TouchableOpacity>
-          </View>
+            </View>
 
-          {/* FOOTER */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>アカウントをお持ちでないですか？</Text>
-            <TouchableOpacity onPress={() => router.replace('/sign-up')}>
-              <Text style={styles.linkText}>新規登録</Text>
-            </TouchableOpacity>
+            <View style={styles.form}>
+              {/* CODE INPUT */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>認証コード</Text>
+                <TextInput
+                  value={code}
+                  onChangeText={setCode}
+                  style={styles.codeInput}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  placeholder="000000"
+                  placeholderTextColor="#cbd5e1"
+                  textAlign="center"
+                />
+              </View>
+
+              {/* VERIFY BUTTON */}
+              <TouchableOpacity
+                style={[styles.button, (code.length !== 6 || isLoading) && styles.buttonDisabled]}
+                onPress={onVerify2FA}
+                disabled={code.length !== 6 || isLoading}
+              >
+                <Text style={styles.buttonText}>
+                  {isLoading ? '認証中...' : '認証する'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* BACK BUTTON */}
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => {
+                  setPending2FA(false);
+                  setCode('');
+                }}
+              >
+                <Text style={styles.backButtonText}>戻る</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* BOTTOM SPACER */}
         <View style={styles.bottomSpacer} />
@@ -217,6 +296,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#64748b',
     textAlign: 'center',
+    lineHeight: 22,
+  },
+  emailHighlight: {
+    color: '#3b82f6',
+    fontWeight: '600',
   },
   form: {
     gap: 16,
@@ -251,13 +335,17 @@ const styles = StyleSheet.create({
   eyeButton: {
     padding: 4,
   },
-  forgotPassword: {
-    alignItems: 'flex-end',
-  },
-  forgotPasswordText: {
-    color: '#3b82f6',
-    fontSize: 13,
-    fontWeight: '600',
+  codeInput: {
+    width: '100%',
+    fontSize: 36,
+    fontWeight: '700',
+    letterSpacing: 16,
+    paddingVertical: 16,
+    backgroundColor: '#f8fafc',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    borderRadius: 16,
+    color: '#0f172a',
   },
   button: {
     backgroundColor: '#3b82f6',
@@ -279,6 +367,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  backButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  backButtonText: {
+    color: '#64748b',
+    fontSize: 14,
+    fontWeight: '600',
   },
   footer: {
     flexDirection: 'row',
