@@ -35,19 +35,30 @@ export default function SignInScreen() {
         password,
       });
 
+      console.log('Sign in status:', signInAttempt.status);
+      console.log('Sign in response:', JSON.stringify(signInAttempt, null, 2));
+
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
         router.replace('/(tabs)');
       } else if (signInAttempt.status === 'needs_second_factor') {
-        // 2FA needed - show code input
-        setPending2FA(true);
+        // Prepare the second factor - this sends the email code
+        try {
+          await signIn.prepareSecondFactor({ strategy: 'email_code' });
+          setPending2FA(true);
+          Alert.alert('認証コード送信', 'メールに認証コードを送信しました。');
+        } catch (prepErr: any) {
+          console.error('Prepare 2FA error:', prepErr);
+          // Even if prepare fails, show the 2FA screen (code might already be sent)
+          setPending2FA(true);
+        }
       } else {
-        console.error(JSON.stringify(signInAttempt, null, 2));
-        Alert.alert('エラー', '追加の認証が必要です');
+        console.error('Unexpected status:', signInAttempt.status);
+        Alert.alert('エラー', `認証が必要です: ${signInAttempt.status}`);
       }
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
-      const msg = err.errors?.[0]?.message || 'ログインに失敗しました';
+      console.error('Sign in error:', JSON.stringify(err, null, 2));
+      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'ログインに失敗しました';
       Alert.alert('ログインエラー', msg);
     } finally {
       setIsLoading(false);
@@ -64,19 +75,32 @@ export default function SignInScreen() {
         code,
       });
 
+      console.log('2FA attempt status:', signInAttempt.status);
+
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
         router.replace('/(tabs)');
       } else {
-        console.error(JSON.stringify(signInAttempt, null, 2));
-        Alert.alert('エラー', '認証に失敗しました');
+        console.error('2FA not complete:', JSON.stringify(signInAttempt, null, 2));
+        Alert.alert('エラー', '認証に失敗しました。もう一度お試しください。');
       }
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
-      const msg = err.errors?.[0]?.message || '認証コードが正しくありません';
+      console.error('2FA error:', JSON.stringify(err, null, 2));
+      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || '認証コードが正しくありません';
       Alert.alert('認証エラー', msg);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const resendCode = async () => {
+    if (!isLoaded) return;
+    try {
+      await signIn.prepareSecondFactor({ strategy: 'email_code' });
+      Alert.alert('送信完了', '認証コードを再送信しました。');
+    } catch (err: any) {
+      console.error('Resend error:', err);
+      Alert.alert('エラー', '再送信に失敗しました。');
     }
   };
 
@@ -208,6 +232,11 @@ export default function SignInScreen() {
                 <Text style={styles.buttonText}>
                   {isLoading ? '認証中...' : '認証する'}
                 </Text>
+              </TouchableOpacity>
+
+              {/* RESEND BUTTON */}
+              <TouchableOpacity style={styles.resendButton} onPress={resendCode}>
+                <Text style={styles.resendButtonText}>認証コードを再送信</Text>
               </TouchableOpacity>
 
               {/* BACK BUTTON */}
@@ -368,14 +397,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  backButton: {
+  resendButton: {
     alignItems: 'center',
     paddingVertical: 12,
+  },
+  resendButtonText: {
+    color: '#3b82f6',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  backButton: {
+    alignItems: 'center',
+    paddingVertical: 8,
   },
   backButtonText: {
     color: '#64748b',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   footer: {
     flexDirection: 'row',
